@@ -8,6 +8,8 @@ from client import CodeReviewEnvClient
 from models import ReviewAction
 from tasks import TASKS
 
+load_dotenv()
+
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 API_KEY      = os.getenv("HF_TOKEN") or os.getenv("API_KEY", "")
 MODEL_NAME   = os.getenv("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
