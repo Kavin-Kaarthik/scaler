@@ -52,10 +52,29 @@ def call_llm(code: str, language: str, task_description: str) -> dict:
         max_tokens=MAX_TOKENS,
     )
     text = response.choices[0].message.content.strip()
+    # Remove markdown code blocks if present
+    text = re.sub(r'```json|```', '', text).strip()
     match = re.search(r'\{.*\}', text, re.DOTALL)
     if not match:
         raise ValueError(f"No JSON in model output: {text!r}")
-    return json.loads(match.group())
+    raw = match.group()
+    # Fix common JSON issues: replace smart quotes, remove trailing commas
+    raw = raw.replace('\u201c', '"').replace('\u201d', '"')
+    raw = raw.replace('\u2018', "'").replace('\u2019', "'")
+    raw = re.sub(r',\s*([}\]])', r'\1', raw)
+    # Remove control characters
+    raw = re.sub(r'[\x00-\x1f\x7f]', lambda m: '' if m.group() not in '\n\r\t' else m.group(), raw)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        # Last resort: extract issues and fixed_code manually
+        issues_match = re.search(r'"issues"\s*:\s*\[(.*?)\]', raw, re.DOTALL)
+        fixed_match = re.search(r'"fixed_code"\s*:\s*"(.*?)"(?:\s*[,}])', raw, re.DOTALL)
+        issues = []
+        if issues_match:
+            issues = re.findall(r'"(.*?)"', issues_match.group(1))
+        fixed_code = fixed_match.group(1) if fixed_match else ""
+        return {"issues": issues, "fixed_code": fixed_code}
 
 
 def run_episode(task_id: str) -> float:
