@@ -1,0 +1,34 @@
+name: code_review_env
+version: "1.0.0"
+description: >
+  An RL environment where an AI agent reviews code in any programming language.
+  The agent identifies bugs, style issues, and logic errors, then provides
+  corrected code. Supports Python, JavaScript, Java, and more.
+  Graders are fully deterministic using keyword matching and diff similarity scoring.
+
+entry_point: server.app:app
+port: 7860
+
+tasks:
+  - id: syntax_error
+    description: Identify and fix syntax errors in broken JavaScript code
+    difficulty: easy
+
+  - id: logic_bug
+    description: Find and fix a logic bug in Python code returning wrong value
+    difficulty: medium
+
+  - id: full_review
+    description: Full review of Java code covering naming, O(n^2) complexity, and logic
+    difficulty: hard
+
+hardware:
+  tier: cpu-basic
+
+env_vars:
+  - name: API_BASE_URL
+    description: LLM API endpoint
+  - name: MODEL_NAME
+    description: Model identifier for inference
+  - name: HF_TOKEN
+    description: Hugging Face API key

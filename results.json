@@ -1,0 +1,9 @@
+{
+  "scores": {
+    "syntax_error": 0.7857,
+    "logic_bug": 0.589,
+    "full_review": 0.0
+  },
+  "average": 0.45823333333333327,
+  "model": "meta-llama/Llama-3.1-8B-Instruct"
+}
