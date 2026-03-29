@@ -48,6 +48,25 @@ def obs_to_dict(obs) -> dict:
     }
 
 
+@app.get("/")
+def root():
+    return {
+        "name": "CodeReviewEnv",
+        "version": "1.0.0",
+        "status": "healthy",
+        "description": "An RL environment where an AI agent reviews code and identifies bugs.",
+        "tasks": ["syntax_error", "logic_bug", "full_review"],
+        "endpoints": {
+            "health": "/health",
+            "reset": "/reset",
+            "step": "/step",
+            "state": "/state",
+            "docs": "/docs",
+            "websocket": "/ws"
+        }
+    }
+
+
 @app.get("/health")
 def health():
     return {"status": "healthy"}
