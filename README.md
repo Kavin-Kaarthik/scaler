@@ -1,3 +1,29 @@
+[project]
+name = "code-review-env"
+version = "1.0.0"
+description = "AI Code Review Environment using FastAPI and OpenEnv"
+authors = [
+    { name = "Kavin Kaarthik" }
+]
+readme = "README.md"
+requires-python = ">=3.8"
+
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "httpx",
+    "python-dotenv"
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+
+
+
 📘 Code Review Environment (OpenEnv Compatible)
 🚀 Overview
 This project implements a Code Review Environment where an agent (or user) analyzes code, identifies issues, and submits fixes. The environment evaluates the review and assigns a score based on correctness.
