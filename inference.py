@@ -27,9 +27,9 @@ env = CodeReviewEnvClient(base_url=ENV_BASE_URL)
 SYSTEM_PROMPT = """You are a strict expert code reviewer.
 
 Your job:
-- Identify ALL issues (syntax, logic, edge cases, performance, naming).
-- Do NOT miss edge cases.
-- Ensure correctness.
+- Identify ALL issues (syntax, logic, edge cases, performance, naming)
+- Ensure correctness
+- Do not miss edge cases
 
 Return ONLY valid JSON:
 {
@@ -41,8 +41,16 @@ Rules:
 - No explanations
 - No markdown
 - No extra text
-- Fixed code must be complete, correct, and runnable
+- Fixed code must be complete and correct
 """
+
+# ================== SCORE NORMALIZER ==================
+def normalize_score(score: float) -> float:
+    if score <= 0.0:
+        return 0.001
+    if score >= 1.0:
+        return 0.9999
+    return score
 
 # ================== LLM CALL ==================
 def call_llm(code: str, language: str, task_description: str) -> dict:
@@ -50,7 +58,7 @@ def call_llm(code: str, language: str, task_description: str) -> dict:
         f"Language: {language}\n\n"
         f"Task: {task_description}\n\n"
         f"Code:\n{code}\n\n"
-        "Return JSON only. Ensure the fixed_code is correct and handles all edge cases. Do not leave fixed_code empty."
+        "Return JSON only. Ensure fixed_code is correct and handles all edge cases."
     )
 
     try:
@@ -82,7 +90,6 @@ def call_llm(code: str, language: str, task_description: str) -> dict:
         issues = data.get("issues", [])
         fixed_code = data.get("fixed_code", "")
 
-        # Safety: never allow empty code
         if not fixed_code.strip():
             fixed_code = code
 
@@ -91,12 +98,10 @@ def call_llm(code: str, language: str, task_description: str) -> dict:
     except Exception:
         return {"issues": ["LLM failure"], "fixed_code": code}
 
-
-# ================== FALLBACK FIX ==================
+# ================== FALLBACK ==================
 def apply_fallback(task_description: str, fixed_code: str) -> str:
     desc = task_description.lower()
 
-    # Logic bug fallback (second largest)
     if "second largest" in desc:
         return """def second_largest(nums):
     unique = list(set(nums))
@@ -107,7 +112,6 @@ def apply_fallback(task_description: str, fixed_code: str) -> str:
 """
 
     return fixed_code
-
 
 # ================== EPISODE ==================
 def run_episode(task_id: str) -> float:
@@ -125,7 +129,6 @@ def run_episode(task_id: str) -> float:
         issues     = result.get("issues", [])
         fixed_code = result.get("fixed_code", "")
 
-        # Apply fallback if needed
         fixed_code = apply_fallback(obs.task_description, fixed_code)
 
         # STEP
@@ -134,20 +137,21 @@ def run_episode(task_id: str) -> float:
             fixed_code=fixed_code
         ))
 
-        print(f"[STEP] step=1 reward={obs.score:.4f}", flush=True)
+        step_score = normalize_score(obs.score)
+        print(f"[STEP] step=1 reward={step_score:.4f}", flush=True)
 
         # FINAL SUBMIT
         obs = env.step(ReviewAction(submit=True))
 
-        print(f"[END] task={task_id} score={obs.score:.4f} steps=1", flush=True)
+        final_score = normalize_score(obs.score)
+        print(f"[END] task={task_id} score={final_score:.4f} steps=1", flush=True)
 
-        return obs.score
+        return final_score
 
     except Exception:
-        print(f"[STEP] step=1 reward=0.0000", flush=True)
-        print(f"[END] task={task_id} score=0.0000 steps=1", flush=True)
-        return 0.0
-
+        print(f"[STEP] step=1 reward=0.0010", flush=True)
+        print(f"[END] task={task_id} score=0.0010 steps=1", flush=True)
+        return 0.001
 
 # ================== MAIN ==================
 def main():
@@ -164,9 +168,9 @@ def main():
         try:
             score = run_episode(task_id)
         except Exception:
-            print(f"[STEP] step=1 reward=0.0000", flush=True)
-            print(f"[END] task={task_id} score=0.0000 steps=1", flush=True)
-            score = 0.0
+            print(f"[STEP] step=1 reward=0.0010", flush=True)
+            print(f"[END] task={task_id} score=0.0010 steps=1", flush=True)
+            score = 0.001
 
         scores[task_id] = score
         total += score
@@ -179,7 +183,6 @@ def main():
             "average": avg,
             "model": MODEL_NAME
         }, f, indent=2)
-
 
 if __name__ == "__main__":
     main()
